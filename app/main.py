@@ -2,13 +2,13 @@ from fastapi import FastAPI
 from app.database.session import engine
 from app.database.base import Base
 
-# Import all models
-from app.models import candidate
-from app.models import interview
-from app.models import round
-from app.models import question
-from app.models import answer
+from app.models import candidate as candidate_model
+from app.models import interview as interview_model
+from app.models import round as round_model
+from app.models import question as question_model
+from app.models import answer as answer_model
 
+from app.routers import candidate, interview
 
 app = FastAPI(
     title="AI Interview System",
@@ -16,6 +16,9 @@ app = FastAPI(
 )
 
 Base.metadata.create_all(bind=engine)
+
+app.include_router(candidate.router)
+app.include_router(interview.router)
 
 
 @app.get("/")
