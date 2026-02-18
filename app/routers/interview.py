@@ -16,16 +16,13 @@ def create_interview(interview: InterviewCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_interview)
 
-    # Automatically create Round 1
-    round1, questions = create_round1(db_interview.id, db)
+    round1 = create_round1(db_interview.id, db)
 
     return {
         "interview_id": db_interview.id,
-        "round1_id": round1.id,
-        "round1_status": round1.status,
-        "questions": questions
+        "round1_id": round1["round_id"],
+        "round1_status": "InProgress"
     }
-
 
 
 @router.get("/", response_model=list[InterviewResponse])

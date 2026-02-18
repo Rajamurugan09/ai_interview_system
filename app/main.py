@@ -7,6 +7,7 @@ from app.models import interview as interview_model
 from app.models import round as round_model
 from app.models import question as question_model
 from app.models import answer as answer_model
+from app.routers import round
 
 from app.routers import candidate, interview
 
@@ -19,6 +20,8 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(candidate.router)
 app.include_router(interview.router)
+app.include_router(round.router)
+
 
 
 @app.get("/")
