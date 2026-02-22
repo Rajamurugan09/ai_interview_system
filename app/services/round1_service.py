@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 PASS_MARK = 60  # 60% to pass
 
 
-# ✅ CREATE ROUND 1  (THIS WAS MISSING — FIXED)
 def create_round1(interview_id: int, db: Session):
 
     interview = db.query(Interview).filter(
@@ -24,7 +23,6 @@ def create_round1(interview_id: int, db: Session):
     )
 
     db.add(round_obj)
-
     interview.status = "Round1_InProgress"
 
     db.commit()
@@ -36,21 +34,26 @@ def create_round1(interview_id: int, db: Session):
     }
 
 
-# ✅ EVALUATE ROUND 1
-# ✅ EVALUATE ROUND 1 (Corrected for 20 Questions)
 def evaluate_round1(data, db: Session):
 
     round_obj = db.query(Round).filter(
-        Round.id == data.round_id
+        Round.id == data.round_id,
+        Round.round_number == 1
     ).first()
 
     if not round_obj:
-        return {"error": "Round not found"}
+        return {"error": "Round 1 not found"}
 
-    # Get total Round 1 questions (assuming round_type = 1)
+    # Total MCQ questions (should be 20)
     total_questions = db.query(Question).filter(
         Question.round_type == 1
     ).count()
+
+    if total_questions == 0:
+        return {"error": "No Round 1 questions found in database"}
+
+    if len(data.answers) != total_questions:
+        return {"error": f"You must answer all {total_questions} questions"}
 
     correct_count = 0
 
@@ -64,7 +67,6 @@ def evaluate_round1(data, db: Session):
         if not question:
             continue
 
-        # Save answer
         answer_record = Answer(
             round_id=data.round_id,
             question_id=ans.question_id,
@@ -75,7 +77,6 @@ def evaluate_round1(data, db: Session):
         if question.correct_answer.strip().lower() == ans.response.strip().lower():
             correct_count += 1
 
-    # Calculate score based on TOTAL 20 questions
     score_percentage = (correct_count / total_questions) * 100
 
     round_obj.score = score_percentage
@@ -85,8 +86,17 @@ def evaluate_round1(data, db: Session):
         Interview.id == round_obj.interview_id
     ).first()
 
+    # 🔥 AUTO CREATE ROUND 2 IF PASSED
     if score_percentage >= PASS_MARK:
         interview.status = "Round2_Pending"
+
+        round2 = Round(
+            interview_id=interview.id,
+            round_number=2,
+            status="InProgress"
+        )
+        db.add(round2)
+
         result = "Passed - Promoted to Round 2"
     else:
         interview.status = "Rejected"
